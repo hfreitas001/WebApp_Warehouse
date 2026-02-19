@@ -1,19 +1,18 @@
-# 🎫 Support tickets template
+# 📦 WMS (versão mínima)
 
-A simple Streamlit app showing an internal tool that lets you create, manage, and visualize support tickets. 
+App Streamlit para testar fluxo de estoque: **Entrada**, **Saída** e **Estoque**. Tudo em memória (session state).
 
-[![Open in Streamlit](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://support-tickets-template.streamlit.app/)
+## Rodar
 
-### How to run it on your own machine
+```bash
+pip install -r requirements.txt
+streamlit run run_wms.py
+```
 
-1. Install the requirements
+## O que tem
 
-   ```
-   $ pip install -r requirements.txt
-   ```
+- **Entrada**: formulário (código do item, quantidade, endereço) → adiciona ao estoque.
+- **Saída**: lista o estoque, escolhe um Box e dá baixa.
+- **Estoque**: mostra totais e tabela.
 
-2. Run the app
-
-   ```
-   $ streamlit run streamlit_app.py
-   ```
+Dados só existem na sessão; ao recarregar a página o estoque zera.
