@@ -3,7 +3,7 @@ pandas
 google-cloud-bigquery
 db-dtypes
 pandas-gbq
-qrcode
+qrcode[pil]
 Pillow
 pyzbar
 altair

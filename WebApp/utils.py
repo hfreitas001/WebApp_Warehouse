@@ -6,10 +6,14 @@ from io import BytesIO
 
 import pandas as pd
 import streamlit as st
-import qrcode
 from google.cloud import bigquery
 from google.oauth2 import service_account
 from PIL import Image
+
+try:
+    import qrcode
+except ImportError:
+    qrcode = None
 
 try:
     from pyzbar.pyzbar import decode
@@ -91,6 +95,8 @@ def ler_qr_da_imagem(image_file):
 
 
 def gerar_qr_base64(codigo):
+    if qrcode is None:
+        return None
     qr = qrcode.make(codigo)
     buf = BytesIO()
     qr.save(buf, format="PNG")
