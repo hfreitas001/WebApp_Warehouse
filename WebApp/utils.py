@@ -28,6 +28,9 @@ TABLE_ID = f"{PROJECT_ID}.{DATASET_ID}.operations_webapp_warehouse_instock"
 # Depósitos / Storages para controle manual
 STORAGES = ["Storage - Andar 2", "Storage - Andar 3"]
 
+# Pedidos de transferência em aberto (somente leitura)
+TABLE_OPEN_TRANSFERS = "tractian-bi.operations_dbt.fct_open_transfer_request_lines"
+
 
 def _get_credentials():
     """Carrega credenciais: 1) Streamlit Secrets (deploy), 2) Arquivo local, 3) GOOGLE_APPLICATION_CREDENTIALS."""
@@ -76,6 +79,13 @@ def load_data():
 def load_stock_from_bq():
     client = get_bq_client()
     return client.query(f"SELECT * FROM `{TABLE_ID}`").to_dataframe()
+
+
+@st.cache_data(ttl=120)
+def load_open_transfer_requests():
+    """Pedidos de transferência em aberto (somente leitura)."""
+    client = get_bq_client()
+    return client.query(f"SELECT * FROM `{TABLE_OPEN_TRANSFERS}`").to_dataframe()
 
 
 def insert_items_to_bq_load_job(df_to_insert):
