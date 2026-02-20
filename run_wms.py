@@ -1,6 +1,5 @@
 """
-App WMS. Execute: streamlit run run_wms.py
-O código abaixo precisa rodar a cada interação; por isso está aqui e não só no import.
+WMS Tractian. Execute: streamlit run run_wms.py
 """
 import os
 import sys
@@ -17,15 +16,10 @@ from WebApp.dashboards import show as show_dashboards
 
 st.set_page_config(page_title="WMS Tractian", page_icon="📦", layout="wide")
 st.sidebar.title("📦 WMS")
-pagina = st.sidebar.radio(
-    "Módulo",
-    ["Inbound", "Outbound", "Dashboard"],
-    label_visibility="collapsed",
-)
+pagina = st.sidebar.radio("Módulo", ["Inbound", "Outbound", "Dashboard"], label_visibility="collapsed")
 
 if pagina == "Inbound":
-    data = load_data()
-    show_inbound(data)
+    show_inbound(load_data())
 elif pagina == "Outbound":
     show_outbound()
 else:

@@ -17,12 +17,11 @@ def show():
 
     with st.form("out_picking"):
         item = st.selectbox("SKU", skus, key="out_sku")
-        qtd = st.number_input("Quantidade", min_value=1, value=1, key="out_qtd")
+        st.number_input("Quantidade", min_value=1, value=1, key="out_qtd")
         if st.form_submit_button("Gerar plano de picking"):
             stock = df[df["itemCode"] == item].copy()
-            stock["_dt_lote"] = stock["BatchId"].apply(parse_date_lote)
-            stock = stock.sort_values("_dt_lote")
-            st.session_state.pick_list = stock.drop(columns=["_dt_lote"])
+            stock["_dt"] = stock["BatchId"].apply(parse_date_lote)
+            st.session_state.pick_list = stock.sort_values("_dt").drop(columns=["_dt"])
             st.rerun()
 
     if "pick_list" in st.session_state:
