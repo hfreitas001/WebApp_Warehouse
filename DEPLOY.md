@@ -30,9 +30,10 @@ git push -u origin main
    - **Repository**: `SEU_USUARIO/WebApp_Warehouse`
    - **Branch**: `main`
    - **Main file path**: `WebApp/main.py`
-4. Clique em **"Advanced settings"** e, em **Secrets**, adicione uma chave:
-   - Nome: `GCP_CREDENTIALS_JSON`
-   - Valor: o **conteúdo completo** do seu `service-account.json` (copie e cole o JSON inteiro que você baixou do Google Cloud, em uma linha ou mantendo a formatação).
+4. **Secrets (credenciais do BigQuery)**  
+   Clique em **"Advanced settings"** e role até a caixa **"Secrets"**.  
+   Adicione a chave `GCP_CREDENTIALS_JSON` com o conteúdo completo do seu `service-account.json` (formato TOML válido; se aparecer "Invalid format", use aspas duplas e escape: `\"` para aspas e `\\` para barra dentro do JSON).
+
 5. Clique em **"Deploy"**.
 
 ---
