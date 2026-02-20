@@ -25,6 +25,9 @@ PROJECT_ID = "tractian-bi"
 DATASET_ID = "operations"
 TABLE_ID = f"{PROJECT_ID}.{DATASET_ID}.operations_webapp_warehouse_instock"
 
+# Depósitos / Storages para controle manual
+STORAGES = ["Storage - Andar 2", "Storage - Andar 3"]
+
 
 def _get_credentials():
     """Carrega credenciais: 1) Streamlit Secrets (deploy), 2) Arquivo local, 3) GOOGLE_APPLICATION_CREDENTIALS."""
@@ -110,3 +113,51 @@ def parse_date_lote(batch_str):
     except Exception:
         pass
     return datetime.datetime(2099, 12, 31)
+
+
+def remove_quantity_from_storage(storage, item_code, quantity_to_remove):
+    """
+    Remove quantidade de um item em um depósito (FEFO).
+    Retorna (True, None) em sucesso ou (False, mensagem de erro).
+    """
+    df = load_stock_from_bq()
+    if df.empty:
+        return False, "Estoque vazio."
+    mask = (df["address"].astype(str).str.strip() == storage.strip()) & (
+        df["itemCode"].astype(str).str.strip() == str(item_code).strip()
+    )
+    rows = df[mask].copy()
+    if rows.empty:
+        return False, f"Nenhum item '{item_code}' no depósito '{storage}'."
+    rows["_qty"] = pd.to_numeric(rows["quantity"], errors="coerce").fillna(0).astype(int)
+    rows["_dt"] = rows["BatchId"].apply(parse_date_lote)
+    rows = rows.sort_values("_dt")
+    need = int(quantity_to_remove)
+    if rows["_qty"].sum() < need:
+        return False, f"Quantidade insuficiente. Disponível: {int(rows['_qty'].sum())}."
+    client = get_bq_client()
+    for _, row in rows.iterrows():
+        if need <= 0:
+            break
+        box_id = row["BoxId"]
+        qty = int(row["_qty"])
+        if qty <= need:
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[bigquery.ScalarQueryParameter("bid", "STRING", str(box_id))]
+            )
+            client.query(f"DELETE FROM `{TABLE_ID}` WHERE BoxId = @bid", job_config=job_config).result()
+            need -= qty
+        else:
+            new_qty = qty - need
+            job_config = bigquery.QueryJobConfig(
+                query_parameters=[
+                    bigquery.ScalarQueryParameter("bid", "STRING", str(box_id)),
+                    bigquery.ScalarQueryParameter("new_qty", "STRING", str(new_qty)),
+                ]
+            )
+            client.query(
+                f"UPDATE `{TABLE_ID}` SET quantity = @new_qty WHERE BoxId = @bid",
+                job_config=job_config,
+            ).result()
+            need = 0
+    return True, None
