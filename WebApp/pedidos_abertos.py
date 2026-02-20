@@ -5,53 +5,6 @@ import altair as alt
 from WebApp.utils import load_open_transfer_requests
 
 
-def _str_whs(s):
-    """Normaliza valor de warehouse para comparação (1.01 == '1.01')."""
-    if pd.isna(s):
-        return ""
-    return str(s).strip()
-
-
-def _mask_picking(df):
-    """(from_whs in [1.01, 1.15]) OR (to_whs == 1.05)."""
-    if "from_whs" not in df.columns or "to_whs" not in df.columns:
-        return pd.Series(False, index=df.index)
-    f = df["from_whs"].apply(_str_whs)
-    t = df["to_whs"].apply(_str_whs)
-    return (f.isin(["1.01", "1.15"])) | (t == "1.05")
-
-
-def _mask_inbound(df):
-    """(to_whs == 1.01) AND (from_whs != 1.06)."""
-    if "from_whs" not in df.columns or "to_whs" not in df.columns:
-        return pd.Series(False, index=df.index)
-    f = df["from_whs"].apply(_str_whs)
-    t = df["to_whs"].apply(_str_whs)
-    return (t == "1.01") & (f != "1.06")
-
-
-def _mask_rma(df):
-    """from_whs == 1.16."""
-    if "from_whs" not in df.columns:
-        return pd.Series(False, index=df.index)
-    f = df["from_whs"].apply(_str_whs)
-    return f == "1.16"
-
-
-def _mask_others(df):
-    """NOT Picking AND NOT Inbound AND NOT RMA."""
-    return ~_mask_picking(df) & ~_mask_inbound(df) & ~_mask_rma(df)
-
-
-def _tipo_linha(df):
-    """Atribui tipo a cada linha: Picking, Inbound, RMA, Others."""
-    out = pd.Series("Others", index=df.index)
-    out[_mask_picking(df)] = "Picking"
-    out[_mask_inbound(df)] = "Inbound"
-    out[_mask_rma(df)] = "RMA"
-    return out
-
-
 def show_pedidos_abertos():
     st.header("📋 Pedidos de transferência em aberto")
     st.caption("Dados da fct_open_transfer_request_lines (somente leitura – nenhuma alteração).")
@@ -67,16 +20,24 @@ def show_pedidos_abertos():
         return
 
     df = df.copy()
-    df["_tipo"] = _tipo_linha(df)
 
-    # --- Dashboard de pedidos ---
+    # Coluna transfer_type (se não existir, criar "Todos" só)
+    tipo_col = "transfer_type"
+    if tipo_col not in df.columns:
+        st.warning(f"Coluna '{tipo_col}' não encontrada. Exibindo todos os dados.")
+        df[tipo_col] = "—"
+
+    tipos_unicos = ["Todos"] + sorted(df[tipo_col].dropna().astype(str).unique().tolist())
+
+    # --- Dashboard por transfer_type ---
     st.subheader("📊 Dashboard de pedidos")
     order_col = "order_id" if "order_id" in df.columns else df.columns[0]
-    count_by_type = df.groupby("_tipo", as_index=False).agg(
-        linhas=("_tipo", "count"),
-        pedidos_unicos=(order_col, "nunique"),
-    ).rename(columns={"_tipo": "tipo"})
-    count_by_type = count_by_type.sort_values("linhas", ascending=False)
+    count_by_type = (
+        df.groupby(tipo_col, as_index=False)
+        .agg(linhas=(tipo_col, "count"), pedidos_unicos=(order_col, "nunique"))
+        .rename(columns={tipo_col: "tipo"})
+        .sort_values("linhas", ascending=False)
+    )
 
     cols = st.columns(min(5, len(count_by_type) + 1))
     for idx, (_, row) in enumerate(count_by_type.iterrows()):
@@ -89,23 +50,18 @@ def show_pedidos_abertos():
         alt.Chart(count_by_type)
         .mark_bar()
         .encode(x=alt.X("tipo:N", sort="-y"), y="pedidos_unicos:Q", color="tipo:N")
-        .properties(height=220, title="Pedidos únicos por tipo")
+        .properties(height=220, title="Pedidos únicos por transfer_type")
     )
     st.altair_chart(chart_bars, use_container_width=True)
-
     st.dataframe(count_by_type, use_container_width=True, hide_index=True)
 
-    # --- Filtro por tipo (estrutura da fórmula) ---
+    # --- Filtro por transfer_type ---
     st.subheader("🔍 Filtrar por tipo")
-    tipo = st.selectbox(
-        "Tipo de pedido",
-        ["Todos", "Picking", "Inbound", "RMA", "Others"],
-        help="Picking: (origem 1.01/1.15) ou destino 1.05 | Inbound: destino 1.01 e origem ≠1.06 | RMA: origem 1.16 | Others: demais",
-    )
-    mask_tipo = pd.Series(True, index=df.index)
-    if tipo != "Todos":
-        mask_tipo = df["_tipo"] == tipo
-    df_filtrado = df[mask_tipo].copy()
+    tipo = st.selectbox("Transfer type", tipos_unicos)
+    if tipo == "Todos":
+        df_filtrado = df.copy()
+    else:
+        df_filtrado = df[df[tipo_col].astype(str) == tipo].copy()
 
     # Filtros adicionais
     so_atrasados = False
@@ -141,16 +97,9 @@ def show_pedidos_abertos():
     if "is_overdue" in df_filtrado.columns and so_atrasados:
         df_filtrado = df_filtrado[df_filtrado["is_overdue"] == True]
 
-    # Remover coluna auxiliar na exibição
-    df_show = df_filtrado.drop(columns=["_tipo"], errors="ignore")
+    st.metric("Linhas em aberto (filtrado)", len(df_filtrado))
+    st.dataframe(df_filtrado, use_container_width=True, hide_index=True)
 
-    st.metric("Linhas em aberto (filtrado)", len(df_show))
-    st.dataframe(df_show, use_container_width=True, hide_index=True)
-
-    csv = df_show.to_csv(index=False).encode("utf-8-sig")
-    st.download_button(
-        "📥 Exportar CSV",
-        data=csv,
-        file_name=f"pedidos_transferencia_{tipo.lower() if tipo != 'Todos' else 'todos'}.csv",
-        mime="text/csv",
-    )
+    csv = df_filtrado.to_csv(index=False).encode("utf-8-sig")
+    nome_arquivo = f"pedidos_{tipo.lower().replace(' ', '_')}.csv" if tipo != "Todos" else "pedidos_todos.csv"
+    st.download_button("📥 Exportar CSV", data=csv, file_name=nome_arquivo, mime="text/csv")
