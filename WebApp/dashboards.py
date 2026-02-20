@@ -1,24 +1,27 @@
 import pandas as pd
 import streamlit as st
 import altair as alt
-from .utils import get_stock
+
+from WebApp.utils import load_stock_from_bq
 
 
-def show():
-    st.header("📊 Dashboard - Estoque")
-    df = get_stock()
-    if df.empty:
-        st.info("Nenhum item em estoque.")
-        return
-    qtd = pd.to_numeric(df["quantity"], errors="coerce").fillna(0)
-    c1, c2 = st.columns(2)
-    c1.metric("Volumes (linhas)", len(df))
-    c2.metric("Quantidade total", int(qtd.sum()))
-    if "address" in df.columns and "itemCode" in df.columns and len(df) > 0:
-        df_chart = df.copy()
-        df_chart["quantity"] = pd.to_numeric(df_chart["quantity"], errors="coerce").fillna(0)
-        st.altair_chart(
-            alt.Chart(df_chart).mark_bar().encode(x="address:N", y="sum(quantity):Q", color="itemCode:N").properties(height=280),
-            use_container_width=True,
+def show_dashboards(data):
+    st.header("📊 Dashboard de Operações")
+    df = load_stock_from_bq()
+    if not df.empty:
+        df = df.copy()
+        df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce").fillna(0)
+        c1, c2 = st.columns(2)
+        c1.metric("Volumes em Estoque", len(df))
+        c2.metric("Qtd Total Itens", int(df["quantity"].sum()))
+
+        chart = (
+            alt.Chart(df)
+            .mark_bar()
+            .encode(x="address:N", y="sum(quantity):Q", color="itemCode:N")
+            .properties(height=300)
         )
-    st.dataframe(df, use_container_width=True, hide_index=True)
+        st.altair_chart(chart, use_container_width=True)
+        st.dataframe(df, use_container_width=True)
+    else:
+        st.info("Nenhum dado em estoque.")
