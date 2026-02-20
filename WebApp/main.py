@@ -28,8 +28,9 @@ if compact:
     .main .block-container { padding: 0.4rem 0.6rem 1rem; max-width: 100%%; }
     .stTextArea textarea { font-size: 12px !important; }
     div[data-testid="stVerticalBlock"] > div { padding: 0.2rem 0 !important; }
-    .stDataFrame { font-size: 12px !important; }
-    .stDataFrame td, .stDataFrame th { padding: 0.2em 0.4em !important; }
+    .stDataFrame { font-size: 10px !important; max-width: 100%%; }
+    .stDataFrame td, .stDataFrame th { padding: 0.15em 0.3em !important; font-size: 10px !important; }
+    .stDataFrame table { width: 100%% !important; table-layout: auto !important; }
     </style>
     """, unsafe_allow_html=True)
 
