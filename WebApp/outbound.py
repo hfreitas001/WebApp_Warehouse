@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 from google.cloud import bigquery
 
-from WebApp.utils import load_stock_from_bq, get_bq_client, TABLE_ID, parse_date_lote
+from WebApp.utils import load_stock_from_bq, get_bq_client, TABLE_ID, parse_date_lote, log_movement
 
 
 def show_outbound():
@@ -23,11 +23,24 @@ def show_outbound():
         st.dataframe(st.session_state.pick_list, use_container_width=True)
         if st.button("🚀 Confirmar Saída", type="primary"):
             client = get_bq_client()
-            for bid in st.session_state.pick_list["BoxId"]:
+            pl = st.session_state.pick_list
+            for _, row in pl.iterrows():
                 job_config = bigquery.QueryJobConfig(
-                    query_parameters=[bigquery.ScalarQueryParameter("bid", "STRING", str(bid))]
+                    query_parameters=[bigquery.ScalarQueryParameter("bid", "STRING", str(row["BoxId"]))]
                 )
                 client.query(f"DELETE FROM `{TABLE_ID}` WHERE BoxId = @bid", job_config=job_config).result()
+                try:
+                    log_movement(
+                        "SAIDA",
+                        row["itemCode"],
+                        row["quantity"],
+                        from_address=row.get("address"),
+                        box_id=row["BoxId"],
+                        description="Picking FEFO",
+                        source="WEBAPP_OUTBOUND",
+                    )
+                except Exception:
+                    pass
             st.success("Baixa realizada!")
             del st.session_state.pick_list
             st.rerun()

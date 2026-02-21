@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import streamlit as st
 
-from WebApp.utils import ler_qr_da_imagem, insert_items_to_bq_load_job
+from WebApp.utils import ler_qr_da_imagem, insert_items_to_bq_load_job, log_movement
 
 
 def show_inbound(data):
@@ -99,6 +99,19 @@ def show_inbound(data):
                         "expiryDate": i.get("expiryDate", "N/A"),
                     })
                 insert_items_to_bq_load_job(pd.DataFrame(rows))
+                for r in rows:
+                    try:
+                        log_movement(
+                            "ENTRADA",
+                            r["itemCode"],
+                            r["quantity"],
+                            to_address=endereco,
+                            box_id=r["BoxId"],
+                            description=r.get("description", "Entrada WebApp"),
+                            source="WEBAPP_INBOUND",
+                        )
+                    except Exception:
+                        pass
                 st.success("Estoque Atualizado!")
                 st.session_state.inbound_queue = []
                 st.rerun()

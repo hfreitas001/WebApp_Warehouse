@@ -31,6 +31,9 @@ STORAGES = ["Storage - Andar 2", "Storage - Andar 3"]
 # Pedidos de transferência em aberto (somente leitura)
 TABLE_OPEN_TRANSFERS = "tractian-bi.operations_dbt.fct_open_transfer_request_lines"
 
+# Movimentações (log de toda entrada/saída/transferência/ajuste)
+TABLE_MOVEMENTS = f"{PROJECT_ID}.{DATASET_ID}.operations_webapp_warehouse_movements"
+
 
 def _get_credentials():
     """Carrega credenciais: 1) Streamlit Secrets (deploy), 2) Arquivo local, 3) GOOGLE_APPLICATION_CREDENTIALS."""
@@ -88,12 +91,59 @@ def load_open_transfer_requests():
     return client.query(f"SELECT * FROM `{TABLE_OPEN_TRANSFERS}`").to_dataframe()
 
 
+@st.cache_data(ttl=60)
+def load_movements_from_bq():
+    """Histórico de movimentações (entrada, saída, etc.)."""
+    client = get_bq_client()
+    return client.query(f"SELECT * FROM `{TABLE_MOVEMENTS}` ORDER BY movement_at DESC").to_dataframe()
+
+
 def insert_items_to_bq_load_job(df_to_insert):
     client = get_bq_client()
     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
     df_to_insert["quantity"] = df_to_insert["quantity"].astype(str)
     job = client.load_table_from_dataframe(df_to_insert, TABLE_ID, job_config=job_config)
     return job.result()
+
+
+def log_movement(
+    movement_type,
+    item_code,
+    quantity,
+    *,
+    from_address=None,
+    to_address=None,
+    box_id=None,
+    order_id=None,
+    description=None,
+    source=None,
+    quantity_before=None,
+    quantity_after=None,
+    movement_at=None,
+):
+    """Registra uma linha na tabela de movimentações. Campos vazios são enviados como None/string vazia."""
+    import uuid
+    client = get_bq_client()
+    now = movement_at or datetime.datetime.utcnow()
+    movement_id = f"MOV-{now.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
+    row = {
+        "movement_id": movement_id,
+        "movement_type": movement_type,
+        "movement_at": now,
+        "item_code": str(item_code) if item_code else None,
+        "quantity": str(quantity) if quantity is not None else None,
+        "quantity_before": str(quantity_before) if quantity_before is not None else None,
+        "quantity_after": str(quantity_after) if quantity_after is not None else None,
+        "from_address": str(from_address) if from_address else None,
+        "to_address": str(to_address) if to_address else None,
+        "box_id": str(box_id) if box_id else None,
+        "order_id": str(order_id) if order_id else None,
+        "description": str(description) if description else None,
+        "source": str(source) if source else None,
+    }
+    df = pd.DataFrame([row])
+    job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
+    client.load_table_from_dataframe(df, TABLE_MOVEMENTS, job_config=job_config).result()
 
 
 def ler_qr_da_imagem(image_file):

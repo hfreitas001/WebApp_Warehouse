@@ -7,6 +7,7 @@ from WebApp.utils import (
     STORAGES,
     insert_items_to_bq_load_job,
     load_stock_from_bq,
+    log_movement,
     remove_quantity_from_storage,
 )
 
@@ -42,6 +43,18 @@ def show_depositos():
                             ]
                         )
                         insert_items_to_bq_load_job(df_one)
+                        try:
+                            log_movement(
+                                "ENTRADA",
+                                str(item_code).strip(),
+                                str(quantidade),
+                                to_address=local,
+                                box_id=df_one.iloc[0]["BoxId"],
+                                description="Entrada manual depósito",
+                                source="WEBAPP_DEPOSITOS",
+                            )
+                        except Exception:
+                            pass
                         st.success(f"✅ Entrada registrada: {quantidade} un. de {item_code} em {local}")
                         st.rerun()
                     except Exception as e:
@@ -58,6 +71,17 @@ def show_depositos():
                 else:
                     ok, err = remove_quantity_from_storage(local_s, str(item_code_s).strip(), quantidade_s)
                     if ok:
+                        try:
+                            log_movement(
+                                "SAIDA",
+                                str(item_code_s).strip(),
+                                quantidade_s,
+                                from_address=local_s,
+                                description="Saída manual depósito",
+                                source="WEBAPP_DEPOSITOS",
+                            )
+                        except Exception:
+                            pass
                         st.success(f"✅ Saída registrada: {quantidade_s} un. de {item_code_s} em {local_s}")
                         st.rerun()
                     else:
