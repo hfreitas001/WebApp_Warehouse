@@ -27,8 +27,10 @@ def get_client():
     return bigquery.Client(credentials=creds, project=PROJECT_ID)
 
 
-DDL_MOVEMENTS = """
-CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_movements` (
+TABLE_MOVEMENTS = "`tractian-bi.operations.operations_webapp_warehouse_movements`"
+
+DDL_MOVEMENTS = f"""
+CREATE TABLE IF NOT EXISTS {TABLE_MOVEMENTS} (
   movement_id     STRING   NOT NULL,
   movement_type   STRING   NOT NULL,
   movement_at     TIMESTAMP NOT NULL,
@@ -44,6 +46,17 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_m
   source          STRING
 )
 """
+
+# Migrações: adicionar/remover colunas SEM perder dados da tabela.
+# - ADD COLUMN: seguro; dados existentes mantidos, nova coluna fica NULL.
+# - DROP COLUMN: remove coluna e seus dados (BigQuery suporta desde ~2023).
+# - Alterar tipo: BigQuery não tem ALTER COLUMN TYPE; usar nova coluna + backfill + drop antiga.
+MIGRATIONS_MOVEMENTS = [
+    # Exemplo: adicionar coluna (descomente, rode uma vez com --migrate, depois comente de novo)
+    # f"ALTER TABLE {TABLE_MOVEMENTS} ADD COLUMN minha_coluna STRING;",
+    # Exemplo: remover coluna (perde os dados dessa coluna)
+    # f"ALTER TABLE {TABLE_MOVEMENTS} DROP COLUMN coluna_antiga;",
+]
 
 DDL_INVENTORY_COUNT = """
 CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_inventory_count` (
@@ -61,6 +74,11 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_i
 
 
 def main():
+    import argparse
+    parser = argparse.ArgumentParser(description="Cria tabelas WMS no BigQuery")
+    parser.add_argument("--migrate", action="store_true", help="Executa também as migrações (ALTER TABLE) listadas em MIGRATIONS_MOVEMENTS")
+    args = parser.parse_args()
+
     print("Conectando ao BigQuery...")
     client = get_client()
 
@@ -71,6 +89,17 @@ def main():
     print("Criando operations_webapp_warehouse_inventory_count...")
     client.query(DDL_INVENTORY_COUNT).result()
     print("  OK: operations_webapp_warehouse_inventory_count")
+
+    if args.migrate and MIGRATIONS_MOVEMENTS:
+        print("Executando migrações (ADD/DROP COLUMN)...")
+        for sql in MIGRATIONS_MOVEMENTS:
+            sql = sql.strip()
+            if not sql or sql.startswith("#"):
+                continue
+            client.query(sql).result()
+            print("  OK:", sql[:60] + "..." if len(sql) > 60 else sql)
+    elif args.migrate:
+        print("Nenhuma migração definida em MIGRATIONS_MOVEMENTS.")
 
     print("Concluído.")
 

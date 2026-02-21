@@ -15,14 +15,40 @@ from WebApp.dashboards import show_dashboards
 from WebApp.depositos import show_depositos
 from WebApp.pedidos_abertos import show_pedidos_abertos
 from WebApp.movimentacoes import show_movimentacoes
+from WebApp.lancamentos_manuais import show_lancamentos_manuais
 
-st.set_page_config(page_title="WMS Tractian 2026", layout="wide")
+st.set_page_config(page_title="WMS Tractian", layout="wide")
 
 data = load_data()
 
-st.sidebar.title("📦 WMS Menu")
-mode = st.sidebar.selectbox("Módulo:", ["Inbound", "Outbound", "Depósitos", "Movimentações", "Pedidos em aberto", "Dashboard"])
-compact = st.sidebar.checkbox("Tela pequena (leitora Zebra)", value=st.session_state.get("compact_mode", False), key="compact_check")
+# --- Sidebar: navegação profissional (Módulos · Relatórios · Dashboard) ---
+st.sidebar.title("WMS Tractian")
+st.sidebar.markdown("---")
+st.sidebar.markdown("**Módulos** · *Transações*")
+st.sidebar.caption("Inbound · Outbound · Ajustments · Lançamentos manuais")
+st.sidebar.markdown("**Relatórios**")
+st.sidebar.caption("Movimentações · Pedidos em aberto")
+st.sidebar.markdown("**Dashboard geral**")
+st.sidebar.caption("Visão geral")
+st.sidebar.markdown("---")
+
+opcoes = [
+    "Inbound",
+    "Outbound",
+    "Ajustments",
+    "Lançamentos manuais",
+    "Movimentações",
+    "Pedidos em aberto",
+    "Visão geral",
+]
+pagina = st.sidebar.selectbox("Página", opcoes, label_visibility="collapsed", key="nav_pagina")
+
+st.sidebar.markdown("---")
+compact = st.sidebar.checkbox(
+    "Tela compacta (leitora Zebra)",
+    value=st.session_state.get("compact_mode", False),
+    key="compact_check",
+)
 st.session_state.compact_mode = compact
 
 if compact:
@@ -37,15 +63,20 @@ if compact:
     </style>
     """, unsafe_allow_html=True)
 
-if mode == "Inbound":
+# --- Roteamento ---
+if pagina == "Inbound":
     show_inbound(data)
-elif mode == "Outbound":
+elif pagina == "Outbound":
     show_outbound()
-elif mode == "Depósitos":
+elif pagina == "Ajustments":
     show_depositos()
-elif mode == "Movimentações":
+elif pagina == "Lançamentos manuais":
+    show_lancamentos_manuais()
+elif pagina == "Movimentações":
     show_movimentacoes()
-elif mode == "Pedidos em aberto":
+elif pagina == "Pedidos em aberto":
     show_pedidos_abertos()
+elif pagina == "Visão geral":
+    show_dashboards(data)
 else:
     show_dashboards(data)
