@@ -98,6 +98,19 @@ def load_movements_from_bq():
     return client.query(f"SELECT * FROM `{TABLE_MOVEMENTS}` ORDER BY movement_at DESC").to_dataframe()
 
 
+@st.cache_data(ttl=60)
+def get_fulfilled_by_order():
+    """Quantidade já atendida por (order_id, item_code) a partir das movimentações."""
+    client = get_bq_client()
+    q = f"""
+    SELECT order_id, item_code, SUM(SAFE_CAST(quantity AS INT64)) AS quantity_fulfilled
+    FROM `{TABLE_MOVEMENTS}`
+    WHERE order_id IS NOT NULL AND TRIM(COALESCE(order_id, '')) != ''
+    GROUP BY order_id, item_code
+    """
+    return client.query(q).to_dataframe()
+
+
 def insert_items_to_bq_load_job(df_to_insert):
     client = get_bq_client()
     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")

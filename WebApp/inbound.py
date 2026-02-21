@@ -5,7 +5,87 @@ import time
 import pandas as pd
 import streamlit as st
 
-from WebApp.utils import ler_qr_da_imagem, insert_items_to_bq_load_job, log_movement
+from WebApp.utils import (
+    ler_qr_da_imagem,
+    insert_items_to_bq_load_job,
+    log_movement,
+    load_open_transfer_requests,
+    get_fulfilled_by_order,
+)
+
+# Colunas esperadas na tabela de pedidos em aberto
+ORDER_ID_COL = "order_id"
+ITEM_CODE_COL = "item_code"
+OPEN_QTY_COL = "open_quantity"
+QTY_COL = "quantity"
+
+
+def _inbound_atender_pedido(data):
+    """Entrada vinculada a um pedido em aberto: order_id, item_code, open_quantity; qtd <= pendente."""
+    try:
+        df_orders = load_open_transfer_requests()
+        df_fulfilled = get_fulfilled_by_order()
+    except Exception as e:
+        st.error(f"Não foi possível carregar pedidos: {e}")
+        return
+    if df_orders.empty:
+        st.warning("Nenhum pedido em aberto.")
+        return
+    req_id = ORDER_ID_COL if ORDER_ID_COL in df_orders.columns else None
+    req_item = ITEM_CODE_COL if ITEM_CODE_COL in df_orders.columns else None
+    req_open = OPEN_QTY_COL if OPEN_QTY_COL in df_orders.columns else (QTY_COL if QTY_COL in df_orders.columns else None)
+    if not req_id or not req_item or not req_open:
+        st.error("Tabela de pedidos sem order_id, item_code ou open_quantity.")
+        return
+    df_orders = df_orders.copy()
+    df_orders["_open_qty"] = pd.to_numeric(df_orders[req_open], errors="coerce").fillna(0).astype(int)
+    if not df_fulfilled.empty and "order_id" in df_fulfilled.columns and "item_code" in df_fulfilled.columns:
+        df_fulfilled["quantity_fulfilled"] = df_fulfilled["quantity_fulfilled"].fillna(0).astype(int)
+        df_orders = df_orders.merge(
+            df_fulfilled[[ "order_id", "item_code", "quantity_fulfilled" ]],
+            left_on=[req_id, req_item], right_on=["order_id", "item_code"], how="left"
+        )
+        df_orders["atendido"] = df_orders["quantity_fulfilled"].fillna(0).astype(int)
+    else:
+        df_orders["atendido"] = 0
+    df_orders["pendente"] = (df_orders["_open_qty"] - df_orders["atendido"]).clip(lower=0).astype(int)
+    df_orders = df_orders[df_orders["pendente"] > 0].copy()
+    if df_orders.empty:
+        st.info("Nenhuma linha de pedido com quantidade pendente.")
+        return
+    # Opções para o selectbox: uma string por linha
+    df_orders["_label"] = (
+        df_orders[req_id].astype(str) + " | " + df_orders[req_item].astype(str)
+        + " | solicitado: " + df_orders["_open_qty"].astype(str)
+        + " | atendido: " + df_orders["atendido"].astype(str)
+        + " | pendente: " + df_orders["pendente"].astype(str)
+    )
+    opcoes = df_orders["_label"].tolist()
+    idx_map = {opcoes[i]: i for i in range(len(opcoes))}
+    sel = st.selectbox("Selecione a linha do pedido", opcoes)
+    idx = idx_map[sel]
+    row = df_orders.iloc[idx]
+    order_id = str(row[req_id])
+    item_code = str(row[req_item])
+    pendente = int(row["pendente"])
+    with st.form("f_inbound_pedido"):
+        st.caption(f"**Pedido** {order_id} · **Item** {item_code} · **Pendente** {pendente}")
+        qtd = st.number_input("Quantidade a dar entrada", min_value=1, max_value=pendente, value=min(1, pendente))
+        enderecos = data["addr"]["Adress"].unique().tolist() if not data["addr"].empty and "Adress" in data["addr"].columns else ["D1"]
+        endereco = st.selectbox("Endereço", enderecos)
+        if st.form_submit_button("Registrar entrada (atender pedido)"):
+            box_id = f"BOX-{random.randint(1000, 9999)}"
+            df_one = pd.DataFrame([{
+                "BoxId": box_id, "address": endereco, "itemCode": item_code, "quantity": str(qtd),
+                "uom": "un", "BatchId": "N/A", "description": f"Atendimento pedido {order_id}", "expiryDate": "N/A",
+            }])
+            insert_items_to_bq_load_job(df_one)
+            try:
+                log_movement("ENTRADA", item_code, str(qtd), to_address=endereco, box_id=box_id, order_id=order_id, description=f"Atendimento pedido {order_id}", source="WEBAPP_INBOUND")
+            except Exception:
+                pass
+            st.success(f"Entrada registrada para o pedido {order_id}. Pendente restante: {pendente - qtd}")
+            st.rerun()
 
 
 def show_inbound(data):
@@ -18,6 +98,13 @@ def show_inbound(data):
         st.session_state.inbound_queue = []
     if "bipe_counter" not in st.session_state:
         st.session_state.bipe_counter = 0
+
+    fluxo = st.radio("Fluxo:", ["Bipagem livre", "Atender pedido"], horizontal=True)
+
+    # --- Atender pedido: vincula entrada a um pedido em aberto ---
+    if fluxo == "Atender pedido":
+        _inbound_atender_pedido(data)
+        return
 
     modo = st.radio("Método:", ["Scanner Laser", "Câmera"], horizontal=True)
 

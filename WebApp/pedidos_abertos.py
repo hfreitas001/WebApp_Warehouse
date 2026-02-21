@@ -2,15 +2,16 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-from WebApp.utils import load_open_transfer_requests
+from WebApp.utils import load_open_transfer_requests, get_fulfilled_by_order
 
 
 def show_pedidos_abertos():
     st.header("📋 Pedidos de transferência em aberto")
-    st.caption("Dados da fct_open_transfer_request_lines (somente leitura – nenhuma alteração).")
+    st.caption("Dados da fct_open_transfer_request_lines (somente leitura – nenhuma alteração). Atendido/pendente a partir dos movimentos.")
 
     try:
         df = load_open_transfer_requests()
+        df_fulfilled = get_fulfilled_by_order()
     except Exception as e:
         st.error(f"Não foi possível carregar os dados: {e}")
         return
@@ -20,6 +21,19 @@ def show_pedidos_abertos():
         return
 
     df = df.copy()
+    open_col = "open_quantity" if "open_quantity" in df.columns else ("quantity" if "quantity" in df.columns else None)
+    if open_col and "order_id" in df.columns and "item_code" in df.columns and not df_fulfilled.empty:
+        df["_solicitado"] = pd.to_numeric(df[open_col], errors="coerce").fillna(0).astype(int)
+        df_fulfilled = df_fulfilled.copy()
+        df_fulfilled["quantity_fulfilled"] = df_fulfilled["quantity_fulfilled"].fillna(0).astype(int)
+        df = df.merge(
+            df_fulfilled[["order_id", "item_code", "quantity_fulfilled"]],
+            on=["order_id", "item_code"],
+            how="left",
+        )
+        df["atendido"] = df["quantity_fulfilled"].fillna(0).astype(int)
+        df["pendente"] = (df["_solicitado"] - df["atendido"]).clip(lower=0).astype(int)
+        df = df.drop(columns=["quantity_fulfilled", "_solicitado"], errors="ignore")
 
     # Coluna transfer_type (se não existir, criar "Todos" só)
     tipo_col = "transfer_type"
