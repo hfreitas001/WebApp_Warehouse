@@ -33,57 +33,57 @@ OPCOES_REL = ["Movimentações", "Pedidos em aberto"]
 OPCOES_DASH = ["Visão geral"]
 pagina = st.session_state.pagina
 
-# Valor "esperado" em cada bloco quando a página atual não está nele (evita sobrescrever ao abrir outro bloco)
-esperado_trans = pagina if pagina in OPCOES_TRANS else OPCOES_TRANS[0]
-esperado_rel = pagina if pagina in OPCOES_REL else OPCOES_REL[0]
-esperado_dash = pagina if pagina in OPCOES_DASH else OPCOES_DASH[0]
+
+def _ao_clicar_trans():
+    st.session_state.pagina = st.session_state.nav_trans
+
+
+def _ao_clicar_rel():
+    st.session_state.pagina = st.session_state.nav_rel
+
+
+def _ao_clicar_dash():
+    st.session_state.pagina = st.session_state.nav_dash
+
 
 # Bloco 1: Módulos (Transações)
 idx_trans = OPCOES_TRANS.index(pagina) if pagina in OPCOES_TRANS else 0
 label_modulos = f"Módulos · {pagina}" if pagina in OPCOES_TRANS else "Módulos"
 with st.sidebar.expander(label_modulos, expanded=(pagina in OPCOES_TRANS)):
-    escolha_trans = st.radio(
+    st.radio(
         "Transações",
         OPCOES_TRANS,
         index=idx_trans,
         key="nav_trans",
         label_visibility="collapsed",
+        on_change=_ao_clicar_trans,
     )
-    if escolha_trans != esperado_trans:
-        st.session_state.pagina = escolha_trans
-        st.rerun()
 
 # Bloco 2: Relatórios
-pagina = st.session_state.pagina
 idx_rel = OPCOES_REL.index(pagina) if pagina in OPCOES_REL else 0
 label_rel = f"Relatórios · {pagina}" if pagina in OPCOES_REL else "Relatórios"
 with st.sidebar.expander(label_rel, expanded=(pagina in OPCOES_REL)):
-    escolha_rel = st.radio(
+    st.radio(
         "Relatórios",
         OPCOES_REL,
         index=idx_rel,
         key="nav_rel",
         label_visibility="collapsed",
+        on_change=_ao_clicar_rel,
     )
-    if escolha_rel != esperado_rel:
-        st.session_state.pagina = escolha_rel
-        st.rerun()
 
 # Bloco 3: Dashboard geral
-pagina = st.session_state.pagina
 idx_dash = OPCOES_DASH.index(pagina) if pagina in OPCOES_DASH else 0
 label_dash = f"Dashboard geral · {pagina}" if pagina in OPCOES_DASH else "Dashboard geral"
 with st.sidebar.expander(label_dash, expanded=(pagina in OPCOES_DASH)):
-    escolha_dash = st.radio(
+    st.radio(
         "Dashboard",
         OPCOES_DASH,
         index=idx_dash,
         key="nav_dash",
         label_visibility="collapsed",
+        on_change=_ao_clicar_dash,
     )
-    if escolha_dash != esperado_dash:
-        st.session_state.pagina = escolha_dash
-        st.rerun()
 
 pagina = st.session_state.pagina
 
