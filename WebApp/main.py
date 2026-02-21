@@ -89,10 +89,10 @@ st.sidebar.markdown("---")
 
 pagina = st.session_state.pagina
 
-# Todas as opções como botões; só o da página ativa em destaque (type="primary")
+# Todas as opções como botões; só o da página ativa em destaque. Expanders fechados por padrão para poder fechar ao clicar.
 if OPCOES_TRANS:
     label_modulos = f"Módulos · {pagina}" if pagina in OPCOES_TRANS else "Módulos"
-    with st.sidebar.expander(label_modulos, expanded=(pagina in OPCOES_TRANS)):
+    with st.sidebar.expander(label_modulos, expanded=False):
         for op in OPCOES_TRANS:
             if st.sidebar.button(op, type="primary" if pagina == op else "secondary", key=f"bt_trans_{op}", use_container_width=True):
                 st.session_state.pagina = op
@@ -100,7 +100,7 @@ if OPCOES_TRANS:
 
 if OPCOES_REL:
     label_rel = f"Relatórios · {pagina}" if pagina in OPCOES_REL else "Relatórios"
-    with st.sidebar.expander(label_rel, expanded=(pagina in OPCOES_REL)):
+    with st.sidebar.expander(label_rel, expanded=False):
         for op in OPCOES_REL:
             if st.sidebar.button(op, type="primary" if pagina == op else "secondary", key=f"bt_rel_{op}", use_container_width=True):
                 st.session_state.pagina = op
@@ -108,14 +108,14 @@ if OPCOES_REL:
 
 if _pode("Visão geral"):
     label_dash = f"Dashboard geral · {pagina}" if pagina == "Visão geral" else "Dashboard geral"
-    with st.sidebar.expander(label_dash, expanded=(pagina == "Visão geral")):
+    with st.sidebar.expander(label_dash, expanded=False):
         if st.sidebar.button("Visão geral", type="primary" if pagina == "Visão geral" else "secondary", key="bt_dash", use_container_width=True):
             st.session_state.pagina = "Visão geral"
             st.rerun()
 
 if OPCOES_CONFIG:
     label_cfg = f"Configurações · {pagina}" if pagina in OPCOES_CONFIG else "Configurações"
-    with st.sidebar.expander(label_cfg, expanded=(pagina in OPCOES_CONFIG)):
+    with st.sidebar.expander(label_cfg, expanded=False):
         for op in OPCOES_CONFIG:
             if st.sidebar.button(op, type="primary" if pagina == op else "secondary", key=f"bt_cfg_{op}", use_container_width=True):
                 st.session_state.pagina = op
