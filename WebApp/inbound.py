@@ -14,6 +14,7 @@ from WebApp.utils import (
 )
 
 # Colunas esperadas na tabela de pedidos em aberto
+TYPE_COL = "transfer_type"
 ORDER_ID_COL = "order_id"
 ITEM_CODE_COL = "item_code"
 OPEN_QTY_COL = "open_quantity"
@@ -21,7 +22,7 @@ QTY_COL = "quantity"
 
 
 def _inbound_atender_pedido(data):
-    """Entrada vinculada a um pedido em aberto: order_id, item_code, open_quantity; qtd <= pendente."""
+    """Entrada vinculada a um pedido em aberto. Seleção: type → order_id → item (linha)."""
     try:
         df_orders = load_open_transfer_requests()
         df_fulfilled = get_fulfilled_by_order()
@@ -34,6 +35,7 @@ def _inbound_atender_pedido(data):
     req_id = ORDER_ID_COL if ORDER_ID_COL in df_orders.columns else None
     req_item = ITEM_CODE_COL if ITEM_CODE_COL in df_orders.columns else None
     req_open = OPEN_QTY_COL if OPEN_QTY_COL in df_orders.columns else (QTY_COL if QTY_COL in df_orders.columns else None)
+    req_type = TYPE_COL if TYPE_COL in df_orders.columns else None
     if not req_id or not req_item or not req_open:
         st.error("Tabela de pedidos sem order_id, item_code ou open_quantity.")
         return
@@ -42,8 +44,8 @@ def _inbound_atender_pedido(data):
     if not df_fulfilled.empty and "order_id" in df_fulfilled.columns and "item_code" in df_fulfilled.columns:
         df_fulfilled["quantity_fulfilled"] = df_fulfilled["quantity_fulfilled"].fillna(0).astype(int)
         df_orders = df_orders.merge(
-            df_fulfilled[[ "order_id", "item_code", "quantity_fulfilled" ]],
-            left_on=[req_id, req_item], right_on=["order_id", "item_code"], how="left"
+            df_fulfilled[["order_id", "item_code", "quantity_fulfilled"]],
+            left_on=[req_id, req_item], right_on=["order_id", "item_code"], how="left",
         )
         df_orders["atendido"] = df_orders["quantity_fulfilled"].fillna(0).astype(int)
     else:
@@ -53,18 +55,29 @@ def _inbound_atender_pedido(data):
     if df_orders.empty:
         st.info("Nenhuma linha de pedido com quantidade pendente.")
         return
-    # Opções para o selectbox: uma string por linha
-    df_orders["_label"] = (
-        df_orders[req_id].astype(str) + " | " + df_orders[req_item].astype(str)
-        + " | solicitado: " + df_orders["_open_qty"].astype(str)
-        + " | atendido: " + df_orders["atendido"].astype(str)
-        + " | pendente: " + df_orders["pendente"].astype(str)
+
+    # 1) Agrupar por type (transfer_type), depois order_id, depois itens
+    if req_type:
+        tipos = sorted(df_orders[req_type].dropna().astype(str).unique().tolist())
+        tipo_sel = st.selectbox("Tipo (transfer_type)", tipos, key="in_type")
+        df_orders = df_orders[df_orders[req_type].astype(str) == tipo_sel].copy()
+        if df_orders.empty:
+            st.warning("Nenhuma linha pendente para este tipo.")
+            return
+    orders_unicos = sorted(df_orders[req_id].dropna().astype(str).unique().tolist())
+    order_sel = st.selectbox("Pedido (order_id)", orders_unicos, key="in_order")
+    df_order = df_orders[df_orders[req_id].astype(str) == order_sel].copy()
+    df_order["_label"] = (
+        df_order[req_item].astype(str)
+        + " | solicitado: " + df_order["_open_qty"].astype(str)
+        + " | atendido: " + df_order["atendido"].astype(str)
+        + " | pendente: " + df_order["pendente"].astype(str)
     )
-    opcoes = df_orders["_label"].tolist()
+    opcoes = df_order["_label"].tolist()
     idx_map = {opcoes[i]: i for i in range(len(opcoes))}
-    sel = st.selectbox("Selecione a linha do pedido", opcoes)
+    sel = st.selectbox("Item (linha do pedido)", opcoes, key="in_item")
     idx = idx_map[sel]
-    row = df_orders.iloc[idx]
+    row = df_order.iloc[idx]
     order_id = str(row[req_id])
     item_code = str(row[req_item])
     pendente = int(row["pendente"])

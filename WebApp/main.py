@@ -42,10 +42,6 @@ def _ao_clicar_rel():
     st.session_state.pagina = st.session_state.nav_rel
 
 
-def _ao_clicar_dash():
-    st.session_state.pagina = st.session_state.nav_dash
-
-
 # Bloco 1: Módulos (Transações)
 idx_trans = OPCOES_TRANS.index(pagina) if pagina in OPCOES_TRANS else 0
 label_modulos = f"Módulos · {pagina}" if pagina in OPCOES_TRANS else "Módulos"
@@ -72,18 +68,12 @@ with st.sidebar.expander(label_rel, expanded=(pagina in OPCOES_REL)):
         on_change=_ao_clicar_rel,
     )
 
-# Bloco 3: Dashboard geral
-idx_dash = OPCOES_DASH.index(pagina) if pagina in OPCOES_DASH else 0
+# Bloco 3: Dashboard geral (botão para garantir navegação com uma única opção)
 label_dash = f"Dashboard geral · {pagina}" if pagina in OPCOES_DASH else "Dashboard geral"
 with st.sidebar.expander(label_dash, expanded=(pagina in OPCOES_DASH)):
-    st.radio(
-        "Dashboard",
-        OPCOES_DASH,
-        index=idx_dash,
-        key="nav_dash",
-        label_visibility="collapsed",
-        on_change=_ao_clicar_dash,
-    )
+    if st.button("Visão geral", key="btn_dash", use_container_width=True):
+        st.session_state.pagina = "Visão geral"
+        st.rerun()
 
 pagina = st.session_state.pagina
 
