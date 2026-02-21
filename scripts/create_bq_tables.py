@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Cria as tabelas do WMS no BigQuery (movimentações e inventário/contagem).
+Cria as tabelas do WMS no BigQuery: users_wms, movements, enderecamentos, address_sku, order_reservations, params, inventory_count.
+Instock já existe; --migrate adiciona qty_total/qty_reserved e colunas em movements.
 Usa o mesmo service-account.json do app. Rode na raiz do projeto:
 
   python scripts/create_bq_tables.py
@@ -46,7 +47,7 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_u
 )
 """
 
-# --- enderecamentos: depósito (dropdown) + address_code (opções por depósito) ---
+# --- enderecamentos: depósito (dropdown) + address_code (para uso no Inbound) ---
 DDL_ENDERECAMENTOS = """
 CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_enderecamentos` (
   warehouse_name   STRING   NOT NULL,
@@ -55,7 +56,7 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_e
 )
 """
 
-# --- mapeamento endereço × SKU (configuração no app) ---
+# --- mapeamento endereço × SKU (Configurações no app) ---
 DDL_ADDRESS_SKU = """
 CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_address_sku` (
   address_code   STRING   NOT NULL,
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_a
 )
 """
 
-# --- reserva de pedido (qual user está atendendo; aviso se outro user já reservou) ---
+# --- reserva de pedido (aviso se outro user já está atendendo) ---
 DDL_ORDER_RESERVATIONS = """
 CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_order_reservations` (
   order_id      STRING   NOT NULL,
@@ -73,7 +74,7 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_o
 )
 """
 
-# --- parâmetros do sistema (tempo de reserva, etc.) ---
+# --- parâmetros do sistema (tempo de reserva, etc. em Configurações) ---
 DDL_PARAMS = """
 CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_params` (
   param_key    STRING   NOT NULL,
@@ -115,6 +116,7 @@ MIGRATIONS_INSTOCK = [
     f"UPDATE {TABLE_INSTOCK} SET qty_total = SAFE_CAST(quantity AS INT64), qty_reserved = 0 WHERE qty_total IS NULL AND quantity IS NOT NULL;",
 ]
 
+# --- inventário / contagem (ajuste de inventário) ---
 DDL_INVENTORY_COUNT = """
 CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_inventory_count` (
   count_id         STRING   NOT NULL,
@@ -128,7 +130,6 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_i
   description      STRING
 )
 """
-
 
 def main():
     import argparse

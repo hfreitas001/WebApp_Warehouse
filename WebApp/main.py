@@ -89,40 +89,37 @@ st.sidebar.markdown("---")
 
 pagina = st.session_state.pagina
 
-def _ao_clicar_trans():
-    st.session_state.pagina = st.session_state.nav_trans
-
-def _ao_clicar_rel():
-    st.session_state.pagina = st.session_state.nav_rel
-
-def _ao_clicar_config():
-    st.session_state.pagina = st.session_state.nav_config
-    st.rerun()
-
+# Todas as opções como botões; só o da página ativa em destaque (type="primary")
 if OPCOES_TRANS:
-    idx_trans = OPCOES_TRANS.index(pagina) if pagina in OPCOES_TRANS else 0
     label_modulos = f"Módulos · {pagina}" if pagina in OPCOES_TRANS else "Módulos"
     with st.sidebar.expander(label_modulos, expanded=(pagina in OPCOES_TRANS)):
-        st.radio("Transações", OPCOES_TRANS, index=idx_trans, key="nav_trans", label_visibility="collapsed", on_change=_ao_clicar_trans)
+        for op in OPCOES_TRANS:
+            if st.sidebar.button(op, type="primary" if pagina == op else "secondary", key=f"bt_trans_{op}", use_container_width=True):
+                st.session_state.pagina = op
+                st.rerun()
 
 if OPCOES_REL:
-    idx_rel = OPCOES_REL.index(pagina) if pagina in OPCOES_REL else 0
     label_rel = f"Relatórios · {pagina}" if pagina in OPCOES_REL else "Relatórios"
     with st.sidebar.expander(label_rel, expanded=(pagina in OPCOES_REL)):
-        st.radio("Relatórios", OPCOES_REL, index=idx_rel, key="nav_rel", label_visibility="collapsed", on_change=_ao_clicar_rel)
+        for op in OPCOES_REL:
+            if st.sidebar.button(op, type="primary" if pagina == op else "secondary", key=f"bt_rel_{op}", use_container_width=True):
+                st.session_state.pagina = op
+                st.rerun()
 
 if _pode("Visão geral"):
     label_dash = f"Dashboard geral · {pagina}" if pagina == "Visão geral" else "Dashboard geral"
     with st.sidebar.expander(label_dash, expanded=(pagina == "Visão geral")):
-        if st.button("Visão geral", key="btn_dash", use_container_width=True):
+        if st.sidebar.button("Visão geral", type="primary" if pagina == "Visão geral" else "secondary", key="bt_dash", use_container_width=True):
             st.session_state.pagina = "Visão geral"
             st.rerun()
 
 if OPCOES_CONFIG:
-    idx_cfg = OPCOES_CONFIG.index(pagina) if pagina in OPCOES_CONFIG else 0
     label_cfg = f"Configurações · {pagina}" if pagina in OPCOES_CONFIG else "Configurações"
     with st.sidebar.expander(label_cfg, expanded=(pagina in OPCOES_CONFIG)):
-        st.radio("Config", OPCOES_CONFIG, index=idx_cfg, key="nav_config", label_visibility="collapsed", on_change=_ao_clicar_config)
+        for op in OPCOES_CONFIG:
+            if st.sidebar.button(op, type="primary" if pagina == op else "secondary", key=f"bt_cfg_{op}", use_container_width=True):
+                st.session_state.pagina = op
+                st.rerun()
 
 pagina = st.session_state.pagina
 
