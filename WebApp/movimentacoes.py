@@ -1,18 +1,18 @@
 import pandas as pd
 import streamlit as st
 
+# Tabela de movimentações (evita depender de load_movements_from_bq no utils em deploys antigos)
+TABLE_MOVEMENTS = "tractian-bi.operations.operations_webapp_warehouse_movements"
+
 
 def show_movimentacoes():
     st.header("📜 Histórico de movimentações")
     st.caption("Registro de entradas, saídas e movimentações (tabela operations_webapp_warehouse_movements).")
 
     try:
-        from WebApp.utils import load_movements_from_bq
-    except ImportError as e:
-        st.error("Módulo de movimentações indisponível. Verifique o deploy (utils com load_movements_from_bq).")
-        return
-    try:
-        df = load_movements_from_bq()
+        from WebApp.utils import get_bq_client
+        client = get_bq_client()
+        df = client.query(f"SELECT * FROM `{TABLE_MOVEMENTS}` ORDER BY movement_at DESC").to_dataframe()
     except Exception as e:
         st.error(f"Não foi possível carregar: {e}")
         return
