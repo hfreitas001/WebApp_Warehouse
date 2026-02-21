@@ -1,13 +1,16 @@
 import pandas as pd
 import streamlit as st
 
-from WebApp.utils import load_movements_from_bq
-
 
 def show_movimentacoes():
     st.header("📜 Histórico de movimentações")
     st.caption("Registro de entradas, saídas e movimentações (tabela operations_webapp_warehouse_movements).")
 
+    try:
+        from WebApp.utils import load_movements_from_bq
+    except ImportError as e:
+        st.error("Módulo de movimentações indisponível. Verifique o deploy (utils com load_movements_from_bq).")
+        return
     try:
         df = load_movements_from_bq()
     except Exception as e:
