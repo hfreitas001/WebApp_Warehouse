@@ -21,27 +21,71 @@ st.set_page_config(page_title="WMS Tractian", layout="wide")
 
 data = load_data()
 
-# --- Sidebar: navegação profissional (Módulos · Relatórios · Dashboard) ---
+# --- Sidebar: 3 blocos (expanders), cada um com seu dropdown de ferramentas ---
+if "pagina" not in st.session_state:
+    st.session_state.pagina = "Inbound"
+
 st.sidebar.title("WMS Tractian")
 st.sidebar.markdown("---")
-st.sidebar.markdown("**Módulos** · *Transações*")
-st.sidebar.caption("Inbound · Outbound · Ajustments · Lançamentos manuais")
-st.sidebar.markdown("**Relatórios**")
-st.sidebar.caption("Movimentações · Pedidos em aberto")
-st.sidebar.markdown("**Dashboard geral**")
-st.sidebar.caption("Visão geral")
-st.sidebar.markdown("---")
 
-opcoes = [
-    "Inbound",
-    "Outbound",
-    "Ajustments",
-    "Lançamentos manuais",
-    "Movimentações",
-    "Pedidos em aberto",
-    "Visão geral",
-]
-pagina = st.sidebar.selectbox("Página", opcoes, label_visibility="collapsed", key="nav_pagina")
+OPCOES_TRANS = ["Inbound", "Outbound", "Ajustments", "Lançamentos manuais"]
+OPCOES_REL = ["Movimentações", "Pedidos em aberto"]
+OPCOES_DASH = ["Visão geral"]
+pagina = st.session_state.pagina
+
+# Valor "esperado" em cada bloco quando a página atual não está nele (evita sobrescrever ao abrir outro bloco)
+esperado_trans = pagina if pagina in OPCOES_TRANS else OPCOES_TRANS[0]
+esperado_rel = pagina if pagina in OPCOES_REL else OPCOES_REL[0]
+esperado_dash = pagina if pagina in OPCOES_DASH else OPCOES_DASH[0]
+
+# Bloco 1: Módulos (Transações)
+idx_trans = OPCOES_TRANS.index(pagina) if pagina in OPCOES_TRANS else 0
+label_modulos = f"Módulos · {pagina}" if pagina in OPCOES_TRANS else "Módulos"
+with st.sidebar.expander(label_modulos, expanded=(pagina in OPCOES_TRANS)):
+    escolha_trans = st.radio(
+        "Transações",
+        OPCOES_TRANS,
+        index=idx_trans,
+        key="nav_trans",
+        label_visibility="collapsed",
+    )
+    if escolha_trans != esperado_trans:
+        st.session_state.pagina = escolha_trans
+        st.rerun()
+
+# Bloco 2: Relatórios
+pagina = st.session_state.pagina
+idx_rel = OPCOES_REL.index(pagina) if pagina in OPCOES_REL else 0
+label_rel = f"Relatórios · {pagina}" if pagina in OPCOES_REL else "Relatórios"
+with st.sidebar.expander(label_rel, expanded=(pagina in OPCOES_REL)):
+    escolha_rel = st.radio(
+        "Relatórios",
+        OPCOES_REL,
+        index=idx_rel,
+        key="nav_rel",
+        label_visibility="collapsed",
+    )
+    if escolha_rel != esperado_rel:
+        st.session_state.pagina = escolha_rel
+        st.rerun()
+
+# Bloco 3: Dashboard geral
+pagina = st.session_state.pagina
+idx_dash = OPCOES_DASH.index(pagina) if pagina in OPCOES_DASH else 0
+label_dash = f"Dashboard geral · {pagina}" if pagina in OPCOES_DASH else "Dashboard geral"
+with st.sidebar.expander(label_dash, expanded=(pagina in OPCOES_DASH)):
+    escolha_dash = st.radio(
+        "Dashboard",
+        OPCOES_DASH,
+        index=idx_dash,
+        key="nav_dash",
+        label_visibility="collapsed",
+    )
+    if escolha_dash != esperado_dash:
+        st.session_state.pagina = escolha_dash
+        st.rerun()
+
+pagina = st.session_state.pagina
 
 st.sidebar.markdown("---")
 compact = st.sidebar.checkbox(
