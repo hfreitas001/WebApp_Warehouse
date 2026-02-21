@@ -119,6 +119,14 @@ def insert_items_to_bq_load_job(df_to_insert):
     return job.result()
 
 
+def get_current_user_email():
+    """E-mail do usuário logado (Google OIDC). None se não houver login."""
+    try:
+        return st.session_state.get("user_email")
+    except Exception:
+        return None
+
+
 def log_movement(
     movement_type,
     item_code,
@@ -133,9 +141,12 @@ def log_movement(
     quantity_before=None,
     quantity_after=None,
     movement_at=None,
+    user_email=None,
 ):
-    """Registra uma linha na tabela de movimentações. Campos vazios são enviados como None/string vazia."""
+    """Registra uma linha na tabela de movimentações. user_email = quem realizou (login Google)."""
     import uuid
+    if user_email is None:
+        user_email = get_current_user_email()
     client = get_bq_client()
     now = movement_at or datetime.datetime.utcnow()
     movement_id = f"MOV-{now.strftime('%Y%m%d-%H%M%S')}-{uuid.uuid4().hex[:6]}"
@@ -153,6 +164,7 @@ def log_movement(
         "order_id": str(order_id) if order_id else None,
         "description": str(description) if description else None,
         "source": str(source) if source else None,
+        "user_email": str(user_email) if user_email else None,
     }
     df = pd.DataFrame([row])
     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")

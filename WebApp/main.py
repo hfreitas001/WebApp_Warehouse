@@ -8,7 +8,7 @@ if _raiz not in sys.path:
 
 import streamlit as st
 
-from WebApp.utils import load_data
+from WebApp.utils import load_data, get_current_user_email
 from WebApp.inbound import show_inbound
 from WebApp.outbound import show_outbound
 from WebApp.dashboards import show_dashboards
@@ -19,6 +19,19 @@ from WebApp.lancamentos_manuais import show_lancamentos_manuais
 
 st.set_page_config(page_title="WMS Tractian", layout="wide")
 
+# --- Login com Google (OIDC): se configurado em [auth], exige login e guarda e-mail nas movimentações
+_auth_required = False
+if hasattr(st, "user") and hasattr(st.user, "is_logged_in"):
+    if not st.user.is_logged_in:
+        st.info("Faça login com Google para acessar o WMS.")
+        if st.button("Entrar com Google", type="primary"):
+            st.login()
+        st.stop()
+    _email = getattr(st.user, "email", None) or (getattr(st.user, "get", lambda k: None)("email"))
+    st.session_state.user_email = _email
+else:
+    st.session_state.user_email = st.session_state.get("user_email")
+
 data = load_data()
 
 # --- Sidebar: 3 blocos (expanders), cada um com seu dropdown de ferramentas ---
@@ -26,6 +39,10 @@ if "pagina" not in st.session_state:
     st.session_state.pagina = "Inbound"
 
 st.sidebar.title("WMS Tractian")
+if st.session_state.get("user_email"):
+    st.sidebar.caption(f"👤 {st.session_state.user_email}")
+    if hasattr(st, "logout") and st.button("Sair", key="btn_logout", use_container_width=True):
+        st.logout()
 st.sidebar.markdown("---")
 
 OPCOES_TRANS = ["Inbound", "Outbound", "Ajustments", "Lançamentos manuais"]

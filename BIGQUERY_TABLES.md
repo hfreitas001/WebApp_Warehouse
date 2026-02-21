@@ -55,9 +55,12 @@ CREATE TABLE IF NOT EXISTS `tractian-bi.operations.operations_webapp_warehouse_m
   box_id          STRING,
   order_id        STRING,
   description     STRING,
-  source          STRING
+  source          STRING,
+  user_email      STRING
 );
 ```
+
+A coluna `user_email` registra o e-mail do usuário logado (Google OIDC) quando disponível. Para tabelas já criadas, rode: `python scripts/create_bq_tables.py --migrate`.
 
 **Sugestão de valores para `movement_type` e `source`:**
 

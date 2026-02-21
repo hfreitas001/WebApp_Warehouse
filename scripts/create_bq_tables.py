@@ -43,19 +43,16 @@ CREATE TABLE IF NOT EXISTS {TABLE_MOVEMENTS} (
   box_id          STRING,
   order_id        STRING,
   description     STRING,
-  source          STRING
+  source          STRING,
+  user_email      STRING
 )
 """
 
 # Migrações: adicionar/remover colunas SEM perder dados da tabela.
 # - ADD COLUMN: seguro; dados existentes mantidos, nova coluna fica NULL.
-# - DROP COLUMN: remove coluna e seus dados (BigQuery suporta desde ~2023).
-# - Alterar tipo: BigQuery não tem ALTER COLUMN TYPE; usar nova coluna + backfill + drop antiga.
+# - Rode uma vez: python scripts/create_bq_tables.py --migrate (se a coluna já existir, comente a linha abaixo).
 MIGRATIONS_MOVEMENTS = [
-    # Exemplo: adicionar coluna (descomente, rode uma vez com --migrate, depois comente de novo)
-    # f"ALTER TABLE {TABLE_MOVEMENTS} ADD COLUMN minha_coluna STRING;",
-    # Exemplo: remover coluna (perde os dados dessa coluna)
-    # f"ALTER TABLE {TABLE_MOVEMENTS} DROP COLUMN coluna_antiga;",
+    f"ALTER TABLE {TABLE_MOVEMENTS} ADD COLUMN user_email STRING;",
 ]
 
 DDL_INVENTORY_COUNT = """
