@@ -12,7 +12,8 @@ from WebApp.utils import (
     get_fulfilled_by_order,
 )
 
-TYPE_COL = "transfer_type"
+# Colunas da base de pedidos em aberto (open_orders / fct_open_transfer_request_lines)
+tipo_col = "transfer_type"
 ORDER_ID_COL = "order_id"
 ITEM_CODE_COL = "item_code"
 OPEN_QTY_COL = "open_quantity"
@@ -37,11 +38,13 @@ def _outbound_atender_pedido():
     req_id = ORDER_ID_COL if ORDER_ID_COL in df_orders.columns else None
     req_item = ITEM_CODE_COL if ITEM_CODE_COL in df_orders.columns else None
     req_open = OPEN_QTY_COL if OPEN_QTY_COL in df_orders.columns else (QTY_COL if QTY_COL in df_orders.columns else None)
-    req_type = TYPE_COL if TYPE_COL in df_orders.columns else None
     if not req_id or not req_item or not req_open:
         st.error("Tabela de pedidos sem order_id, item_code ou open_quantity.")
         return
     df_orders = df_orders.copy()
+    # Coluna tipo = transfer_type da base open_orders (como em pedidos_abertos)
+    if tipo_col not in df_orders.columns:
+        df_orders[tipo_col] = "—"
     df_orders["_open_qty"] = pd.to_numeric(df_orders[req_open], errors="coerce").fillna(0).astype(int)
     if not df_fulfilled.empty and "order_id" in df_fulfilled.columns and "item_code" in df_fulfilled.columns:
         df_fulfilled["quantity_fulfilled"] = df_fulfilled["quantity_fulfilled"].fillna(0).astype(int)
@@ -58,14 +61,13 @@ def _outbound_atender_pedido():
         st.info("Nenhuma linha com quantidade pendente.")
         return
 
-    # 1) Tipo (transfer_type) → 2) order_id → 3) item (linha)
-    if req_type:
-        tipos = sorted(df_orders[req_type].dropna().astype(str).unique().tolist())
-        tipo_sel = st.selectbox("Tipo (transfer_type)", tipos, key="out_type")
-        df_orders = df_orders[df_orders[req_type].astype(str) == tipo_sel].copy()
-        if df_orders.empty:
-            st.warning("Nenhuma linha pendente para este tipo.")
-            return
+    # 1) Tipo = coluna transfer_type da base open_orders → 2) Pedido (order_id) → 3) Item (linha)
+    tipos = sorted(df_orders[tipo_col].dropna().astype(str).unique().tolist())
+    tipo_sel = st.selectbox("Tipo", tipos, key="out_type", help="Coluna transfer_type da base de pedidos em aberto.")
+    df_orders = df_orders[df_orders[tipo_col].astype(str) == tipo_sel].copy()
+    if df_orders.empty:
+        st.warning("Nenhuma linha pendente para este tipo.")
+        return
     orders_unicos = sorted(df_orders[req_id].dropna().astype(str).unique().tolist())
     order_sel = st.selectbox("Pedido (order_id)", orders_unicos, key="out_order")
     df_order = df_orders[df_orders[req_id].astype(str) == order_sel].copy()
