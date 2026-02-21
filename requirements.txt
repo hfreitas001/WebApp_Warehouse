@@ -7,3 +7,5 @@ qrcode[pil]
 Pillow
 pyzbar
 altair
+bcrypt
+extra-streamlit-components
