@@ -4,7 +4,7 @@ Uso: correções, ajustes de histórico, documentação.
 """
 import streamlit as st
 
-from WebApp.utils import log_movement, STORAGES
+from WebApp.core.utils import log_movement, STORAGES
 
 
 def show_lancamentos_manuais():

@@ -8,7 +8,7 @@ import pandas as pd
 import streamlit as st
 from google.cloud import bigquery
 
-from WebApp.auth import (
+from WebApp.auth.auth import (
     TABLE_USERS,
     get_user,
     hash_password,
@@ -19,7 +19,7 @@ from WebApp.auth import (
 
 def _users_table_empty():
     try:
-        from WebApp.utils import get_bq_client
+        from WebApp.core.utils import get_bq_client
         client = get_bq_client()
         df = client.query("SELECT 1 FROM `{table}` LIMIT 1".format(table=TABLE_USERS)).to_dataframe()
         return df.empty
@@ -29,7 +29,6 @@ def _users_table_empty():
 
 def show_login_or_signup():
     """Exibe abas Login e Sign Up; ao logar com sucesso, preenche session_state e faz rerun."""
-    # Primeiro acesso: tabela vazia -> criar administrador inicial
     if _users_table_empty():
         st.title("WMS Tractian — Primeiro acesso")
         st.markdown("Crie o usuário administrador inicial.")
@@ -51,7 +50,7 @@ def show_login_or_signup():
                         "approved_by": "system",
                         "created_at": now,
                     }])
-                    from WebApp.utils import get_bq_client
+                    from WebApp.core.utils import get_bq_client
                     client = get_bq_client()
                     job_config = bigquery.LoadJobConfig(write_disposition="WRITE_APPEND")
                     client.load_table_from_dataframe(df, TABLE_USERS, job_config=job_config).result()
@@ -98,7 +97,7 @@ def show_login_or_signup():
                     ok, out = auth_signup(str(email_s).strip(), password_s)
                     if ok:
                         st.success("Cadastro realizado. Aguarde a aprovação do administrador.")
-                        st.info(f"Código de verificação (simulado): **{out}** — use apenas para conferência.")
+                        st.info("Código de verificação (simulado) — use apenas para conferência.")
                     else:
                         st.error(out)
 

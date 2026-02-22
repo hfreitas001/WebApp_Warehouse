@@ -1,0 +1,33 @@
+# Git e IDE
+.git
+.gitignore
+.cursor
+.vscode
+*.md
+docs/
+
+# Frontend (não vai na imagem da API)
+frontend/
+node_modules/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Streamlit (opcional: reduz tamanho; só precisa do WebApp para imports)
+# .streamlit/
+
+# Testes e dev
+tests/
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Outros
+*.log
+.env
+.env.*

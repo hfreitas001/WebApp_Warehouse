@@ -7,7 +7,7 @@ import pandas as pd
 import streamlit as st
 from google.cloud import bigquery
 
-from WebApp.auth import (
+from WebApp.auth.auth import (
     TABLE_USERS,
     MODULE_IDS,
     approve_user,
@@ -17,7 +17,7 @@ from WebApp.auth import (
 
 
 def _get_bq():
-    from WebApp.utils import get_bq_client
+    from WebApp.core.utils import get_bq_client
     return get_bq_client()
 
 

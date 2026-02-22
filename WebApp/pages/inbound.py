@@ -5,7 +5,7 @@ import time
 import pandas as pd
 import streamlit as st
 
-from WebApp.utils import (
+from WebApp.core.utils import (
     ler_qr_da_imagem,
     insert_items_to_bq_load_job,
     log_movement,

@@ -34,6 +34,9 @@ TABLE_OPEN_TRANSFERS = "tractian-bi.operations_dbt.fct_open_transfer_request_lin
 # Movimentações (log de toda entrada/saída/transferência/ajuste)
 TABLE_MOVEMENTS = f"{PROJECT_ID}.{DATASET_ID}.operations_webapp_warehouse_movements"
 
+# Raiz WebApp (um nível acima de core/) para CSVs e service-account
+_WEBAPP_ROOT = os.path.join(os.path.dirname(__file__), "..")
+
 
 def _get_credentials():
     """Carrega credenciais: 1) Streamlit Secrets (deploy), 2) Arquivo local, 3) GOOGLE_APPLICATION_CREDENTIALS."""
@@ -43,7 +46,7 @@ def _get_credentials():
             return service_account.Credentials.from_service_account_info(info)
     except (Exception, KeyError):
         pass
-    path_to_json = os.path.join(os.path.dirname(__file__), "..", "service-account.json")
+    path_to_json = os.path.join(_WEBAPP_ROOT, "service-account.json")
     if not os.path.exists(path_to_json):
         path_to_json = os.path.join(os.path.dirname(__file__), "service-account.json")
     if os.path.exists(path_to_json) and os.path.getsize(path_to_json) > 50:
@@ -67,14 +70,14 @@ def get_bq_client():
 
 @st.cache_data(ttl=60)
 def load_data():
-    base_dir = os.path.dirname(__file__)
+    """Carrega CSVs de itens/endereços a partir da raiz do WebApp."""
     files = {
         "items": "Warehouse App (1).xlsx - item_registration.csv",
         "addr": "Warehouse App (1).xlsx - adress_registration.csv",
     }
     dfs = {}
     for key, name in files.items():
-        path = os.path.join(base_dir, name)
+        path = os.path.join(_WEBAPP_ROOT, name)
         dfs[key] = pd.read_csv(path) if os.path.exists(path) else pd.DataFrame()
     return dfs
 

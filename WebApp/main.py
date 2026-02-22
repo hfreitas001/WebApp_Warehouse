@@ -9,17 +9,17 @@ if _raiz not in sys.path:
 import pandas as pd
 import streamlit as st
 
-from WebApp.admin_usuarios import show_admin_usuarios
-from WebApp.auth import can_access_module, get_session_from_cookie, get_user, logout as auth_logout
-from WebApp.login_ui import show_login_or_signup
-from WebApp.utils import load_data
-from WebApp.inbound import show_inbound
-from WebApp.outbound import show_outbound
-from WebApp.dashboards import show_dashboards
-from WebApp.depositos import show_depositos
-from WebApp.pedidos_abertos import show_pedidos_abertos
-from WebApp.movimentacoes import show_movimentacoes
-from WebApp.lancamentos_manuais import show_lancamentos_manuais
+from WebApp.admin.admin_usuarios import show_admin_usuarios
+from WebApp.auth.auth import can_access_module, get_session_from_cookie, get_user, logout as auth_logout
+from WebApp.auth.login_ui import show_login_or_signup
+from WebApp.core.utils import load_data
+from WebApp.pages.inbound import show_inbound
+from WebApp.pages.outbound import show_outbound
+from WebApp.pages.dashboards import show_dashboards
+from WebApp.pages.depositos import show_depositos
+from WebApp.pages.pedidos_abertos import show_pedidos_abertos
+from WebApp.pages.movimentacoes import show_movimentacoes
+from WebApp.pages.lancamentos_manuais import show_lancamentos_manuais
 
 # Mapeamento página (label) -> module_id (controle de acesso)
 PAGINA_TO_MODULE = {

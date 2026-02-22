@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-from WebApp.utils import load_open_transfer_requests, get_fulfilled_by_order
+from WebApp.core.utils import load_open_transfer_requests, get_fulfilled_by_order
 
 
 def show_pedidos_abertos():
@@ -79,6 +79,7 @@ def show_pedidos_abertos():
 
     # Filtros adicionais
     so_atrasados = False
+    from_whs = to_whs = priority = []
     with st.expander("Filtros adicionais (origem, destino, prioridade, atrasados)", expanded=False):
         col1, col2, col3 = st.columns(3)
         with col1:

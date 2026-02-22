@@ -47,7 +47,7 @@ MODULE_IDS = [
 
 
 def _get_bq():
-    from WebApp.utils import get_bq_client
+    from WebApp.core.utils import get_bq_client
     return get_bq_client()
 
 

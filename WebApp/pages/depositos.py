@@ -3,7 +3,7 @@ import random
 import pandas as pd
 import streamlit as st
 
-from WebApp.utils import (
+from WebApp.core.utils import (
     STORAGES,
     insert_items_to_bq_load_job,
     load_stock_from_bq,

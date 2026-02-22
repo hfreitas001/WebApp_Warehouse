@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WMS Tractian — Galaxy S24</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: linear-gradient(145deg, #1a1a2e 0%, #16213e 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: system-ui, -apple-system, sans-serif;
+    }
+    .phone-wrapper {
+      --phone-w: 393px;
+      --phone-h: 852px;
+      width: var(--phone-w);
+      height: var(--phone-h);
+      max-width: 95vw;
+      max-height: 90vh;
+      margin: auto;
+      position: relative;
+    }
+    .phone {
+      width: 100%;
+      height: 100%;
+      background: #0a0a0a;
+      border-radius: 48px;
+      padding: 10px;
+      box-shadow:
+        0 0 0 2px #222,
+        0 25px 50px -12px rgba(0,0,0,0.6),
+        inset 0 0 0 1px rgba(255,255,255,0.03);
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .phone-camera {
+      position: absolute;
+      top: 14px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 14px;
+      height: 14px;
+      background: #111;
+      border-radius: 50%;
+      z-index: 10;
+      box-shadow: inset 0 0 0 2px #333;
+    }
+    .phone-screen {
+      width: 100%;
+      flex: 1;
+      min-height: 0;
+      background: #fff;
+      border-radius: 40px;
+      overflow: hidden;
+      position: relative;
+    }
+    .phone-screen iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .phone-home {
+      position: absolute;
+      bottom: 6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 120px;
+      height: 4px;
+      background: rgba(255,255,255,0.25);
+      border-radius: 2px;
+      z-index: 10;
+    }
+    .label {
+      position: absolute;
+      bottom: -28px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: rgba(255,255,255,0.5);
+      font-size: 12px;
+      white-space: nowrap;
+    }
+    @media (max-height: 900px) {
+      .phone-wrapper {
+        transform: scale(0.85);
+        transform-origin: center;
+      }
+    }
+    @media (max-height: 760px) {
+      .phone-wrapper {
+        transform: scale(0.7);
+        transform-origin: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="phone-wrapper">
+    <div class="phone">
+      <div class="phone-camera" aria-hidden="true"></div>
+      <div class="phone-screen">
+        <iframe src="/" title="WMS Tractian"></iframe>
+      </div>
+      <div class="phone-home" aria-hidden="true"></div>
+    </div>
+    <span class="label">Galaxy S24 · Atualiza ao vivo</span>
+  </div>
+</body>
+</html>

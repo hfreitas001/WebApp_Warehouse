@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 import altair as alt
 
-from WebApp.utils import load_stock_from_bq
+from WebApp.core.utils import load_stock_from_bq
 
 
 def show_dashboards(data):

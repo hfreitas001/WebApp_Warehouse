@@ -2,7 +2,7 @@ import pandas as pd
 import streamlit as st
 from google.cloud import bigquery
 
-from WebApp.utils import (
+from WebApp.core.utils import (
     load_stock_from_bq,
     get_bq_client,
     TABLE_ID,

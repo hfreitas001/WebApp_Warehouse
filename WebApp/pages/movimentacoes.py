@@ -10,7 +10,7 @@ def show_movimentacoes():
     st.caption("Registro de entradas, saídas e movimentações (tabela operations_webapp_warehouse_movements).")
 
     try:
-        from WebApp.utils import get_bq_client
+        from WebApp.core.utils import get_bq_client
         client = get_bq_client()
         df = client.query(f"SELECT * FROM `{TABLE_MOVEMENTS}` ORDER BY movement_at DESC").to_dataframe()
     except Exception as e:
