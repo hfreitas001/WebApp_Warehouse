@@ -12,11 +12,14 @@ from api.routers import auth, data, movements, orders, admin
 app = FastAPI(title="WMS Tractian API", version="0.1.0")
 _default_origins = ",".join(
     f"http://localhost:{p}" for p in (5173, 5174, 5175, 5176, 5177, 5178, 3000)
-) + ",http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:5177"
-_cors_origins = os.getenv("CORS_ORIGINS", _default_origins).strip().split(",")
+) + ",http://127.0.0.1:5173,http://127.0.0.1:5174,https://web-app-warehouse.vercel.app"
+_cors_raw = os.getenv("CORS_ORIGINS", _default_origins).strip().strip('"').strip("'")
+_cors_origins = [o.strip().strip('"').strip("'") for o in _cors_raw.split(",") if o.strip()]
+if "https://web-app-warehouse.vercel.app" not in _cors_origins:
+    _cors_origins.append("https://web-app-warehouse.vercel.app")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[o.strip() for o in _cors_origins if o.strip()],
+    allow_origins=_cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
