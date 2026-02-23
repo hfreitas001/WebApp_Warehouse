@@ -10,7 +10,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.routers import auth, data, movements, orders, admin
 
 app = FastAPI(title="WMS Tractian API", version="0.1.0")
-_cors_origins = os.getenv("CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").strip().split(",")
+_default_origins = ",".join(
+    f"http://localhost:{p}" for p in (5173, 5174, 5175, 5176, 5177, 5178, 3000)
+) + ",http://127.0.0.1:5173,http://127.0.0.1:5174,http://127.0.0.1:5175,http://127.0.0.1:5176,http://127.0.0.1:5177"
+_cors_origins = os.getenv("CORS_ORIGINS", _default_origins).strip().split(",")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[o.strip() for o in _cors_origins if o.strip()],
@@ -23,6 +26,10 @@ app.include_router(data.router, prefix="/data", tags=["data"])
 app.include_router(movements.router, prefix="/movements", tags=["movements"])
 app.include_router(orders.router, prefix="/orders", tags=["orders"])
 app.include_router(admin.router, prefix="/admin", tags=["admin"])
+
+@app.get("/")
+def root():
+    return {"message": "WMS Tractian API", "docs": "/docs", "health": "/health"}
 
 @app.get("/health")
 def health():
