@@ -4,6 +4,14 @@ function getToken() {
   return localStorage.getItem("wms_token");
 }
 
+const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+
+const API_TIMEOUT_MS = 65000;
+
+function getToken() {
+  return localStorage.getItem("wms_token");
+}
+
 export async function api(path, options = {}) {
   const token = getToken();
   const headers = {
@@ -11,7 +19,23 @@ export async function api(path, options = {}) {
     ...(token && { Authorization: "Bearer " + token }),
     ...options.headers,
   };
-  const res = await fetch(BASE + path, { ...options, headers });
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), options.timeout ?? API_TIMEOUT_MS);
+  let res;
+  try {
+    res = await fetch(BASE + path, {
+      ...options,
+      headers,
+      signal: controller.signal,
+    });
+  } catch (err) {
+    clearTimeout(timeoutId);
+    if (err.name === "AbortError") {
+      throw new Error("A API demorou para responder. Tente novamente (a API pode estar acordando).");
+    }
+    throw new Error(err.message || "Falha na conexão. Verifique a internet ou tente novamente.");
+  }
+  clearTimeout(timeoutId);
   if (res.status === 401) {
     localStorage.removeItem("wms_token");
     localStorage.removeItem("wms_user");
