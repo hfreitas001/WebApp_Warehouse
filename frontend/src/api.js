@@ -1,11 +1,4 @@
 const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
-function getToken() {
-  return localStorage.getItem("wms_token");
-}
-
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
-
 const API_TIMEOUT_MS = 65000;
 
 function getToken() {
