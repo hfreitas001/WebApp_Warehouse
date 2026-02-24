@@ -1,4 +1,7 @@
-const BASE = import.meta.env.VITE_API_URL || "http://localhost:8000";
+// Em produção (Vercel) defina VITE_API_URL no painel. Fallback: localhost em dev, Render em produção.
+const _envApi = (import.meta.env.VITE_API_URL || "").trim().replace(/\/+$/, "");
+const _isLocal = typeof window !== "undefined" && /^(localhost|127\.0\.0\.1)$/.test(window.location?.hostname || "");
+const BASE = _envApi || (_isLocal ? "http://localhost:8000" : "https://webapp-warehouse.onrender.com");
 const API_TIMEOUT_MS = 65000;
 
 function getToken() {
@@ -16,7 +19,8 @@ export async function api(path, options = {}) {
   const timeoutId = setTimeout(() => controller.abort(), options.timeout ?? API_TIMEOUT_MS);
   let res;
   try {
-    res = await fetch(BASE + path, {
+    const url = (BASE.replace(/\/+$/, "") + path).replace(/([^:]\/)\/+/g, "$1");
+    res = await fetch(url, {
       ...options,
       headers,
       signal: controller.signal,
@@ -26,7 +30,14 @@ export async function api(path, options = {}) {
     if (err.name === "AbortError") {
       throw new Error("A API demorou para responder. Tente novamente (a API pode estar acordando).");
     }
-    throw new Error(err.message || "Falha na conexão. Verifique a internet ou tente novamente.");
+    const isNetwork = !err.message || err.message === "Failed to fetch" || err.message.includes("NetworkError");
+    if (isNetwork) {
+      const tip = BASE.includes("localhost")
+        ? " Confira se o backend está rodando (ex.: python -m uvicorn api.main:app --reload --port 8000)."
+        : " Verifique se a API no Render está no ar (abra o /health no navegador).";
+      throw new Error("Não foi possível conectar à API." + tip);
+    }
+    throw new Error(err.message || "Falha na conexão. Tente novamente.");
   }
   clearTimeout(timeoutId);
   if (res.status === 401) {

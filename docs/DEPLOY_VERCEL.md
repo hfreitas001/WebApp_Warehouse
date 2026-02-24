@@ -6,6 +6,20 @@ Na Vercel você sobe o **frontend** (React) de graça. A **API** não roda na Ve
 
 ---
 
+## Checklist produção (Vercel + Render)
+
+| Onde | Variável | Valor (exemplo) |
+|------|----------|------------------|
+| **Vercel** | `VITE_API_URL` | `https://webapp-warehouse.onrender.com` (sem barra no final) |
+| **Render** | `CORS_ORIGINS` | `https://web-app-warehouse.vercel.app` (URL do seu front na Vercel) |
+| **Render** | `JWT_SECRET` | Uma string longa e secreta |
+
+- **Render:** Health Check Path = `/health`. Após deploy, abra `https://seu-api.onrender.com/health` para “acordar” o serviço antes de testar o login.
+- **Vercel:** Root Directory = `frontend`. Após alterar variáveis, faça **Redeploy**.
+- Se o front foi deployado sem `VITE_API_URL`, o código usa fallback para a API no Render; mesmo assim é melhor definir a variável e redeployar.
+
+---
+
 ## 1. Subir a API no Render (faça isso primeiro)
 
 1. Acesse **[render.com](https://render.com)** e entre com **GitHub**.
