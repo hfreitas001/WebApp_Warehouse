@@ -2,7 +2,12 @@ import os
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
 
-SECRET = os.environ.get("WMS_JWT_SECRET") or os.environ.get("WMS_COOKIE_SECRET") or "wms-api-dev"
+SECRET = (
+    os.environ.get("JWT_SECRET")
+    or os.environ.get("WMS_JWT_SECRET")
+    or os.environ.get("WMS_COOKIE_SECRET")
+    or "wms-api-dev"
+)
 ALGORITHM = "HS256"
 EXPIRES_HOURS = 24 * 7
 

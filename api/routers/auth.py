@@ -41,14 +41,24 @@ def _user_to_out(user):
 @router.post("/login")
 def login(body: LoginBody):
     from WebApp.auth.auth import login as auth_login, get_user
-    ok, msg = auth_login(body.email.strip(), body.password)
-    if not ok:
-        raise HTTPException(status_code=401, detail=msg)
-    user = get_user(body.email.strip())
-    if user is None:
-        raise HTTPException(status_code=500, detail="Erro ao carregar usuário")
-    token = create_token(body.email.strip().lower())
-    return {"access_token": token, "token_type": "bearer", "user": _user_to_out(user)}
+    try:
+        ok, msg = auth_login(body.email.strip(), body.password)
+        if not ok:
+            raise HTTPException(status_code=401, detail=msg)
+        user = get_user(body.email.strip())
+        if user is None:
+            raise HTTPException(status_code=500, detail="Erro ao carregar usuário")
+        token = create_token(body.email.strip().lower())
+        return {"access_token": token, "token_type": "bearer", "user": _user_to_out(user)}
+    except HTTPException:
+        raise
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=503,
+            detail="Serviço indisponível: configure GCP_CREDENTIALS_JSON no Render.",
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Erro interno no login.")
 
 
 @router.get("/me", response_model=UserOut)

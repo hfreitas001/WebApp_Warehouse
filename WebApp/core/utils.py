@@ -39,7 +39,14 @@ _WEBAPP_ROOT = os.path.join(os.path.dirname(__file__), "..")
 
 
 def _get_credentials():
-    """Carrega credenciais: 1) Streamlit Secrets (deploy), 2) Arquivo local, 3) GOOGLE_APPLICATION_CREDENTIALS."""
+    """Carrega credenciais: 1) Env GCP_CREDENTIALS_JSON (Render etc), 2) Streamlit Secrets, 3) Arquivo local, 4) GOOGLE_APPLICATION_CREDENTIALS."""
+    raw = os.environ.get("GCP_CREDENTIALS_JSON", "").strip()
+    if raw:
+        try:
+            info = json.loads(raw)
+            return service_account.Credentials.from_service_account_info(info)
+        except (json.JSONDecodeError, Exception):
+            pass
     try:
         if hasattr(st, "secrets") and st.secrets.get("GCP_CREDENTIALS_JSON"):
             info = json.loads(st.secrets["GCP_CREDENTIALS_JSON"])
