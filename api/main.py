@@ -1,10 +1,14 @@
 import os
+import re
 import sys
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.requests import Request
+from starlette.responses import Response
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from api.routers import auth, data, deposito, inbound_outbound, movements, orders, admin
@@ -27,14 +31,47 @@ else:
     _cors_origins = list(_default_origins)
 if _vercel_origin not in _cors_origins:
     _cors_origins.append(_vercel_origin)
+_origin_regex = re.compile(r"^https://.*\.vercel\.app$")
 
-# Regex cobre qualquer subdomínio .vercel.app (fallback)
-_origin_regex = r"https://.*\.vercel\.app"
 
+def _is_origin_allowed(origin: str | None) -> bool:
+    if not origin:
+        return False
+    if origin in _cors_origins:
+        return True
+    return bool(_origin_regex.fullmatch(origin))
+
+
+def _cors_headers(origin: str | None) -> dict:
+    if not _is_origin_allowed(origin):
+        return {}
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "*",
+    }
+
+
+class ForceCORSMiddleware(BaseHTTPMiddleware):
+    """Garante CORS em todas as respostas (incl. preflight OPTIONS)."""
+
+    async def dispatch(self, request: Request, call_next):
+        origin = request.headers.get("origin")
+        if request.method == "OPTIONS":
+            return Response(status_code=200, headers=_cors_headers(origin))
+        response = await call_next(request)
+        for k, v in _cors_headers(origin).items():
+            response.headers[k] = v
+        return response
+
+
+app.add_middleware(ForceCORSMiddleware)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
-    allow_origin_regex=_origin_regex,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
