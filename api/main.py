@@ -28,9 +28,13 @@ else:
 if _vercel_origin not in _cors_origins:
     _cors_origins.append(_vercel_origin)
 
+# Regex cobre qualquer subdomínio .vercel.app (fallback)
+_origin_regex = r"https://.*\.vercel\.app"
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=_cors_origins,
+    allow_origin_regex=_origin_regex,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
