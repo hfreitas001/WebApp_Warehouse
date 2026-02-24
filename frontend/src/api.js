@@ -48,6 +48,14 @@ export const data = {
   load: () => api("/data/load"),
   stock: () => api("/data/stock"),
   storages: () => api("/data/storages"),
+  depositoEntrada: (body) =>
+    api("/data/deposito/entrada", { method: "POST", body: JSON.stringify(body) }),
+  depositoSaida: (body) =>
+    api("/data/deposito/saida", { method: "POST", body: JSON.stringify(body) }),
+  inboundBatch: (body) =>
+    api("/data/inbound/batch", { method: "POST", body: JSON.stringify(body) }),
+  outboundConfirm: (body) =>
+    api("/data/outbound/confirm", { method: "POST", body: JSON.stringify(body) }),
 };
 export const movements = {
   list: () => api("/movements"),

@@ -9,11 +9,11 @@ const MODULES = [
   { id: "lancamentos_manuais", label: "Lancamentos manuais", path: "/lancamentos" },
 ];
 const REPORTS = [
-  { id: "movimentacoes", label: "Movimentacoes", path: "/movimentacoes" },
+  { id: "movimentacoes", label: "Movimentações", path: "/movimentacoes" },
   { id: "pedidos_abertos", label: "Pedidos em aberto", path: "/pedidos" },
 ];
-const DASH = { id: "dashboard", label: "Visao geral", path: "/" };
-const CONFIG = [{ id: "admin_usuarios", label: "Admin Usuarios", path: "/admin" }];
+const DASH = { id: "dashboard", label: "Visão geral", path: "/" };
+const CONFIG = [{ id: "admin_usuarios", label: "Admin Usuários", path: "/admin" }];
 
 const ICONS = {
   modules: (
